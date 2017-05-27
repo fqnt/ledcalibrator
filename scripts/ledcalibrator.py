@@ -51,7 +51,7 @@ def my_callback(event):
   if current_image.size == 0:
     return
 
-  for i in range(0,300,5):
+  for i in range(0,300,10):
 
     # capture background and foreground image
 
@@ -59,7 +59,7 @@ def my_callback(event):
     pyledstrip.clear()
     pyledstrip.transmit()
 
-    rospy.sleep(.5)
+    rospy.sleep(.1)
     bg_image = current_image.astype(int)
 
     #setLEDXOn()
@@ -67,7 +67,7 @@ def my_callback(event):
     pyledstrip.transmit()
 
 
-    ACCUMULATE_FRAMES = 10
+    ACCUMULATE_FRAMES = 3
 
     fg_image = np.array([])
     
@@ -85,7 +85,7 @@ def my_callback(event):
     pyledstrip.clear()
     pyledstrip.transmit()
 
-    rospy.sleep(.5)
+    rospy.sleep(.1)
     bg_image2 = current_image.astype(int)
 
 
