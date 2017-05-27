@@ -1,0 +1,9 @@
+<launch>
+
+  <include file="$(find ledcalibrator)/launch/usb_cam.launch" />
+  
+  <include file="$(find ledcalibrator)/launch/ledcalibrator.launch" />
+
+  <include file="$(find ledcalibrator)/launch/visualization.launch" />
+
+</launch>

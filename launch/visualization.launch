@@ -1,0 +1,12 @@
+<launch>
+
+  <arg name="output" default="screen" /> <!-- use "log" or "screen" to specify target for log output -->
+
+<!-- ui -->
+  <node name="visualizer" pkg="rviz" 
+    type="rviz" 
+    output="$(arg output)"
+    args="-d $(find ledcalibrator)/share/rviz-config.rviz">
+  </node>
+
+</launch>
