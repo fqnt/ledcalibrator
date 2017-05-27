@@ -112,6 +112,7 @@ def my_callback(event):
     # report on console and image
 
     print("{0}: {2}, ".format(i, max_loc[0], max_loc[1]))
+    rospy.loginfo("%d: %d, ", i, max_loc[1])
 
     cv2.circle(output, max_loc, 10, 255);
 
