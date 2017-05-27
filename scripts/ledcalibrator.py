@@ -21,6 +21,8 @@ image_pub3 = rospy.Publisher("image_topic_fg_image",Image)
 bridge = CvBridge()
 
 
+DISTANCE_BETWEEN_TWO_LEDS = 100/60
+
 
 class image_converter:
 
@@ -42,16 +44,19 @@ class image_converter:
     current_image = cv_image
 
 
+def run_calibration_sweep(total_ids = 300, strip_resolution = 5, accumulated_frames = 3):
+  '''runs one sweep on the lightstrip and returns the detected coordinates'''
+  global current_image, bridge, image_pub, image_pub2, image_pub3 
 
-def my_callback(event):
-  global current_image, bridge, image_pub, image_pub2, image_pub3, fgbg
+  rospy.loginfo("running calibration sweep ...")
 
-  print 'Timer called at ' + str(event.current_real)
-  
+  coordinates = {}
+
   if current_image.size == 0:
+    rospy.logwarn("no image in the buffer. aborting.")
     return
 
-  for i in range(0,300,10):
+  for i in range(0, total_ids, strip_resolution):
 
     # capture background and foreground image
 
@@ -67,7 +72,7 @@ def my_callback(event):
     pyledstrip.transmit()
 
 
-    ACCUMULATE_FRAMES = 3
+    ACCUMULATE_FRAMES = accumulated_frames
 
     fg_image = np.array([])
     
@@ -111,12 +116,12 @@ def my_callback(event):
 
     # report on console and image
 
+    coordinates[i] = max_loc
+
     print("{0}: {2}, ".format(i, max_loc[0], max_loc[1]))
     rospy.loginfo("%d: %d, ", i, max_loc[1])
 
     cv2.circle(output, max_loc, 10, 255);
-
-
 
     try:
       pass
@@ -126,8 +131,31 @@ def my_callback(event):
     except CvBridgeError as e:
       print(e)
 
+  return coordinates
+
+ 
+
+def estimate_metric_coordinates(pixel_coordinates):
+  '''estimate metric coordinates from pixel coordinates using a distance assumption between two LEDs'''
+  
+  rospy.logwarn("estimate_metric_coordinates not implemented yet. returning pixel coordinates.")
+  return pixel_coordinates
+
+  ''TODO  
 
 
+
+def my_callback(event):
+  global current_image, bridge, image_pub, image_pub2, image_pub3
+
+  print 'Timer called at ' + str(event.current_real)
+ 
+  coordinates = run_calibration_sweep(20,5,1)
+
+  metric_coordinates = estimate_metric_coordinates(coordinates)
+
+  print(coordinates)
+  print(metric_coordinates)
 
 
 
