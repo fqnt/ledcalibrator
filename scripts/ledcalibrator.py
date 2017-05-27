@@ -10,10 +10,14 @@ from cv_bridge import CvBridge, CvBridgeError
 
 import numpy as np
 
+sys.path.append('../../pyledstrip')
+import pyledstrip
 
-current_image = 0
+current_image = np.array([])
 
-image_pub = rospy.Publisher("image_topic_2",Image)
+image_pub = rospy.Publisher("image_topic_output",Image)
+image_pub2 = rospy.Publisher("image_topic_bg_image",Image)
+image_pub3 = rospy.Publisher("image_topic_fg_image",Image)
 bridge = CvBridge()
 
 
@@ -40,25 +44,54 @@ class image_converter:
 
 
 def my_callback(event):
-  global current_image, bridge, image_pub, fgbg
+  global current_image, bridge, image_pub, image_pub2, image_pub3, fgbg
 
   print 'Timer called at ' + str(event.current_real)
-  for i in range(0,300):
+  
+  if current_image.size == 0:
+    return
+
+  for i in range(0,300,5):
 
     # capture background and foreground image
 
     #setAllOff()
+    pyledstrip.clear()
+    pyledstrip.transmit()
+
     rospy.sleep(.5)
-    bg_image = current_image
+    bg_image = current_image.astype(int)
 
     #setLEDXOn()
+    pyledstrip.set_rgb(i,255,255,255)
+    pyledstrip.transmit()
+
+
+    ACCUMULATE_FRAMES = 10
+
+    fg_image = np.array([])
+    
+    rospy.sleep(.1)
+    fg_image = current_image.astype(int)
+
+    for i in range(1,ACCUMULATE_FRAMES):
+      rospy.sleep(.1)
+      fg_image = fg_image + current_image.astype(int)
+
+    fg_image = fg_image / ACCUMULATE_FRAMES
+
+
+    # second background image
+    pyledstrip.clear()
+    pyledstrip.transmit()
+
     rospy.sleep(.5)
-    fg_image = current_image
+    bg_image2 = current_image.astype(int)
 
 
     # calculate diff image
 
-    diff = np.absolute(fg_image.astype(int) - bg_image.astype(int))
+    diff = np.maximum(fg_image - bg_image - bg_image2, 0)
 
 
     diff2 = diff.astype(np.uint8)
@@ -78,7 +111,7 @@ def my_callback(event):
 
     # report on console and image
 
-    print("max_loc: ", max_loc)
+    print("{0}: {2}, ".format(i, max_loc[0], max_loc[1]))
 
     cv2.circle(output, max_loc, 10, 255);
 
@@ -87,6 +120,8 @@ def my_callback(event):
     try:
       pass
       image_pub.publish(bridge.cv2_to_imgmsg(output, "bgr8"))
+      image_pub2.publish(bridge.cv2_to_imgmsg(bg_image.astype(np.uint8), "bgr8"))
+      image_pub3.publish(bridge.cv2_to_imgmsg(fg_image.astype(np.uint8), "bgr8"))
     except CvBridgeError as e:
       print(e)
 
