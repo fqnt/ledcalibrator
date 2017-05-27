@@ -74,7 +74,7 @@ def my_callback(event):
     rospy.sleep(.1)
     fg_image = current_image.astype(int)
 
-    for i in range(1,ACCUMULATE_FRAMES):
+    for j in range(1,ACCUMULATE_FRAMES):
       rospy.sleep(.1)
       fg_image = fg_image + current_image.astype(int)
 
