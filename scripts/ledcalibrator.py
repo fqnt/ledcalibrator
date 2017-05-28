@@ -25,6 +25,8 @@ strip_pixel_coordinates = None
 
 DISTANCE_BETWEEN_TWO_LEDS = 100/60
 
+delay = 1.0
+
 
 class image_converter:
 
@@ -47,7 +49,7 @@ class image_converter:
     current_image = cv_image
 
 
-def run_calibration_sweep(total_ids = 300, strip_resolution = 5, accumulated_frames = 3):
+def run_calibration_sweep(total_ids = 300, strip_resolution = 5, accumulated_frames = 3, delay = 0.5):
   '''runs one sweep on the lightstrip and returns the detected coordinates'''
   global current_image, bridge, image_pub, image_pub2, image_pub3 
 
@@ -67,7 +69,7 @@ def run_calibration_sweep(total_ids = 300, strip_resolution = 5, accumulated_fra
     pyledstrip.clear()
     pyledstrip.transmit()
 
-    rospy.sleep(.5)
+    rospy.sleep(delay)
     bg_image = current_image.astype(int)
 
     #setLEDXOn()
@@ -79,11 +81,11 @@ def run_calibration_sweep(total_ids = 300, strip_resolution = 5, accumulated_fra
 
     fg_image = np.array([])
     
-    rospy.sleep(.5)
+    rospy.sleep(delay)
     fg_image = current_image.astype(int)
 
     for j in range(1,ACCUMULATE_FRAMES):
-      rospy.sleep(.5)
+      rospy.sleep(delay)
       fg_image = fg_image + current_image.astype(int)
 
     fg_image = fg_image / ACCUMULATE_FRAMES
@@ -93,7 +95,7 @@ def run_calibration_sweep(total_ids = 300, strip_resolution = 5, accumulated_fra
     pyledstrip.clear()
     pyledstrip.transmit()
 
-    rospy.sleep(.5)
+    rospy.sleep(delay)
     bg_image2 = current_image.astype(int)
 
 
@@ -237,15 +239,15 @@ def estimate_delay(led_id):
 
   if not led_on:
     rospy.logerr("no LED detected")
-    return False
+    return False, 0
 
   delay = rcv_time - send_time
 
-  milliseconds_delay = delay.secs * 1000 + delay.nsecs / 1000000.
+  seconds_delay = float(delay.secs) + float(delay.nsecs) / 1000000000.
 
-  rospy.loginfo("Delay is %d ms", milliseconds_delay)
+  rospy.loginfo("Delay is %f s", seconds_delay)
 
-  return delay
+  return True, seconds_delay
 
 
 
@@ -253,11 +255,11 @@ def estimate_delay(led_id):
 
 
 def my_callback(event):
-  global current_image, bridge, image_pub, image_pub2, image_pub3, strip_pixel_coordinates
+  global current_image, bridge, image_pub, image_pub2, image_pub3, strip_pixel_coordinates, delay
 
   print 'Timer called at ' + str(event.current_real)
- 
-  coordinates = run_calibration_sweep(20,5,1)
+
+  coordinates = run_calibration_sweep(20,5,1,delay)
 
   strip_pixel_coordinates = coordinates
 
@@ -266,7 +268,10 @@ def my_callback(event):
   print(coordinates)
   print(metric_coordinates)
 
-  estimate_delay(10)
+  success, new_delay = estimate_delay(10)
+
+  if success: delay = new_delay
+  else: delay = delay + 0.1
 
 
 
