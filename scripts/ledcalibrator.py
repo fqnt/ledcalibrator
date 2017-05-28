@@ -25,7 +25,7 @@ strip_pixel_coordinates = None
 
 DISTANCE_BETWEEN_TWO_LEDS = 100/60
 
-delay = 1.0
+delay = 0.3
 
 
 class image_converter:
@@ -250,6 +250,17 @@ def estimate_delay(led_id):
   return True, seconds_delay
 
 
+def batch_estimate_delay(led_id, num_tests = 10):
+  max_delay = 0
+  overall_success = False
+  for i in range(0,num_tests):
+    success, new_delay = estimate_delay(led_id)
+    if success:
+      overall_success = success
+      max_delay = max(new_delay, max_delay)
+
+  return overall_success, max_delay
+
 
 
 
@@ -268,10 +279,18 @@ def my_callback(event):
   print(coordinates)
   print(metric_coordinates)
 
-  success, new_delay = estimate_delay(10)
 
-  if success: delay = new_delay
-  else: delay = delay + 0.1
+  # This can be used to estimate the delay automatically
+
+  # success, new_delay = batch_estimate_delay(10)
+  #
+  # if success:
+  #   new_delay = new_delay * 1.1
+  # else:
+  #   new_delay = delay + 0.1
+  #
+  # rospy.loginfo("updating delay to %f", new_delay)
+  # delay = new_delay
 
 
 
