@@ -8,6 +8,12 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
+from visualization_msgs.msg import Marker
+from visualization_msgs.msg import MarkerArray
+
+count = 0
+MARKERS_MAX = 500
+
 import numpy as np
 
 sys.path.append('../../pyledstrip')
@@ -20,6 +26,8 @@ image_pub = rospy.Publisher("image_topic_output",Image)
 image_pub2 = rospy.Publisher("image_topic_bg_image",Image)
 image_pub3 = rospy.Publisher("image_topic_fg_image",Image)
 bridge = CvBridge()
+
+marker_publisher = rospy.Publisher("visualization_marker_array", MarkerArray)
 
 strip_pixel_coordinates = None
 
@@ -156,7 +164,45 @@ def verify_coordinates(coordinates):
 
 def visualize_coordinates(coordinates):
   '''visualizes the coordinates using ROS markers'''
-  return False
+  global count
+
+  markerArray = MarkerArray()
+
+  for key, coordinate in coordinates.iteritems():
+    marker = Marker()
+    marker.header.frame_id = "/camera_pixel"
+    marker.type = marker.SPHERE
+    marker.action = marker.ADD
+    marker.scale.x = 0.05
+    marker.scale.y = 0.05
+    marker.scale.z = 0.05
+    marker.color.a = 1.0
+    marker.color.r = 1.0
+    marker.color.g = 1.0
+    marker.color.b = 0.0
+    marker.pose.orientation.w = 1.0
+    marker.pose.position.x = float(coordinate[0]) / 100.
+    marker.pose.position.y = 0
+    marker.pose.position.z = float(coordinate[1]) / 100.
+
+    # We add the new marker to the MarkerArray, removing the oldest
+    # marker from it when necessary
+    if (count > MARKERS_MAX):
+      markerArray.markers.pop(0)
+
+    markerArray.markers.append(marker)
+
+  # Renumber the marker IDs
+  id = 0
+  for m in markerArray.markers:
+    m.id = id
+    id += 1
+
+  marker_publisher.publish(markerArray)
+
+  count += 1
+
+  return True
 
 
 def detect_led_on(led_id, bg_image, image):
@@ -279,6 +325,7 @@ def my_callback(event):
   print(coordinates)
   print(metric_coordinates)
 
+  visualize_coordinates(coordinates)
 
   # This can be used to estimate the delay automatically
 
