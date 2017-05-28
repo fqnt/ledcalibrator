@@ -316,7 +316,7 @@ def my_callback(event):
 
   print 'Timer called at ' + str(event.current_real)
 
-  coordinates = run_calibration_sweep(20,5,1,delay)
+  coordinates = run_calibration_sweep(300,5,1,delay)
 
   strip_pixel_coordinates = coordinates
 
